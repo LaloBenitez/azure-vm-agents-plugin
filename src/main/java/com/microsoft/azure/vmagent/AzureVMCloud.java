@@ -427,6 +427,20 @@ public class AzureVMCloud extends Cloud {
         synchronized (this) {
             final int currentCount = getApproximateVirtualMachineCountForTemplate(template);
             final int newCount = currentCount + delta;
+         
+            // Get the maximum allowed count for the template
+            final int maxVMsForTemplate = template.getMaxVirtualMachinesLimit() > 0
+                    ? template.getMaxVirtualMachinesLimit()
+                    : Integer.MAX_VALUE;
+            // Ensure the new count does not exceed the maximum limit for the template
+            if (newCount < 0) {
+                // Handle case where we are reducing the count below zero
+                newCount = 0;
+            } else if (newCount > maxVMsForTemplate) {
+                // Limit the count to the maximum allowed
+                newCount = maxVMsForTemplate;
+            }
+         
             if (approximateVirtualMachineCountsByTemplate == null) {
                 if (newCount != 0) {
                     setCurrentVirtualMachineCount(Collections.singletonMap(templateName, newCount));
